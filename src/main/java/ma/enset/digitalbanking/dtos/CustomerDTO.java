@@ -1,23 +1,18 @@
-package ma.enset.digitalbanking.entities;
+package ma.enset.digitalbanking.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ma.enset.digitalbanking.entities.BankAccount;
 
 import java.util.List;
 
-@Entity
+
 @Data @AllArgsConstructor @NoArgsConstructor
-public class Customer {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class CustomerDTO {
     private Long idCustomer ;
     private String name;
     private String email;
-    @OneToMany(mappedBy = "customer")
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private List<BankAccount> bankAccounts;
-
 }

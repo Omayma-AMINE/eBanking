@@ -1,5 +1,6 @@
 package ma.enset.digitalbanking.entities;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,5 +27,6 @@ public abstract class BankAccount {
     @ManyToOne
     private Customer customer;
     @OneToMany(mappedBy = "bankAccount")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private List<Operation> operationList;
 }

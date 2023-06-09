@@ -1,5 +1,9 @@
 package ma.enset.digitalbanking;
 
+import ma.enset.digitalbanking.dtos.BankAccountDTO;
+import ma.enset.digitalbanking.dtos.CurrentBankAccountDTO;
+import ma.enset.digitalbanking.dtos.CustomerDTO;
+import ma.enset.digitalbanking.dtos.SavingBankAccountDTO;
 import ma.enset.digitalbanking.entities.*;
 import ma.enset.digitalbanking.enums.AccountStatus;
 import ma.enset.digitalbanking.enums.OperationType;
@@ -11,7 +15,6 @@ import ma.enset.digitalbanking.repositories.CustomerRepository;
 import ma.enset.digitalbanking.repositories.OperationRepository;
 import ma.enset.digitalbanking.services.BankAccountService;
 import ma.enset.digitalbanking.services.BankService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -28,11 +31,50 @@ public class DigitalBankingApplication {
     public static void main(String[] args) {
         SpringApplication.run(DigitalBankingApplication.class, args);
     }
-    @Bean
+    //@Bean
+    CommandLineRunner commandLineRunnerVF(BankAccountService bankAccountService){
+        return args -> {
+           Stream.of("Omayma","Hamza","Ismail","AMINE").forEach(name -> {
+                CustomerDTO customerDTO = new CustomerDTO();
+                customerDTO.setName(name);
+                customerDTO.setEmail(name+"@gmail.com");
+                bankAccountService.saveCustomer(customerDTO);
+            });
+         
+            bankAccountService.listCustomers().forEach(customerDTO -> {
+                try {
+                    bankAccountService.saveCurrentAccount(Math.round(Math.random()*9999),5000,customerDTO.getIdCustomer());
+                    bankAccountService.saveSavingAccount(Math.round(Math.random()*9999),2.5,customerDTO.getIdCustomer());
+                } catch (CustomerNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            List<BankAccountDTO> bankAccountDTOS = bankAccountService.bankAccountList();
+            for (BankAccountDTO bankAccountDTO:bankAccountDTOS){
+                for (int i = 0; i < 3; i++){
+                    String accountId;
+                    if (bankAccountDTO instanceof SavingBankAccountDTO)
+                        accountId = ((SavingBankAccountDTO)bankAccountDTO).getIdAccount();
+                    else
+                        accountId = ((CurrentBankAccountDTO)bankAccountDTO).getIdAccount();
+
+                    bankAccountService.credit(accountId,5000+Math.round(Math.random()*9999),"CREDIT");
+                    bankAccountService.debit(accountId,1000+Math.round(Math.random()*5000),"DEBIT");
+                }
+            }
+
+
+
+
+        };
+    }
+
+    //@Bean
     CommandLineRunner startWithService(BankAccountService bankAccountService){
         return args -> {
             Stream.of("Ismail","Mariam","Nabil").forEach(name ->{
-                Customer customer = new Customer();
+                CustomerDTO customer = new CustomerDTO();
                 customer.setName(name);
                 customer.setEmail(name+"@gmail.com");
                 bankAccountService.saveCustomer(customer);
@@ -45,8 +87,15 @@ public class DigitalBankingApplication {
                     bankAccountService.bankAccountList().forEach(bankAccount -> {
                         for (int i=0; i<5; i++){
                             try {
-                                bankAccountService.credit(bankAccount.getIdAccount(),5000+Math.round(Math.random()*9999),"CREDIT");
-                                bankAccountService.debit(bankAccount.getIdAccount(),1000+Math.round(Math.random()*5000),"DEBIT");
+                                String accountId;
+                                if (bankAccount instanceof SavingBankAccountDTO){
+                                    accountId = ((SavingBankAccountDTO) bankAccount).getIdAccount();
+                                }else {
+                                    accountId = ((CurrentBankAccountDTO) bankAccount).getIdAccount();
+
+                                }
+                                bankAccountService.credit(accountId,5000+Math.round(Math.random()*9999),"CREDIT");
+                                bankAccountService.debit(accountId,1000+Math.round(Math.random()*5000),"DEBIT");
                             } catch (BankAccountNotFoundException | BalanceNotSufficientException e) {
                                 e.printStackTrace();
                             }
@@ -107,7 +156,7 @@ public class DigitalBankingApplication {
                     Operation operation = new Operation();
                     operation.setOperationDate(new Date());
                     operation.setType(Math.random()>0.5?OperationType.DEBIT : OperationType.CREDIT);
-                    operation.setDesciption("descrition operation n"+Math.round(Math.random()*10));
+                    operation.setDescription("descrition operation n"+Math.round(Math.random()*10));
                     operation.setAmount(Math.round(Math.random()*5550));
                     operation.setBankAccount(bankAccount);
                     operationRepository.save(operation);
